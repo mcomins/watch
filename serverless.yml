@@ -1,0 +1,26 @@
+service: watch
+
+provider:
+  architecture: arm64
+  deploymentBucket:
+    name: ${self:service}-${self:provider.stage}-${self:provider.region}-deployment-bucket
+    serverSideEncryption: AES256
+  environment:
+    REGION: ${self.provider.region}
+    SERVICE: ${self:service}
+    STAGE: ${self:provider.stage}
+  name: aws
+  region: ${opt:region, 'us-east-1'}
+  runtime: nodejs20.x
+  stage: ${opt:stage, 'stg'}
+
+plugins:
+  - serverless-deployment-bucket
+
+functions:
+  hello:
+    handler: handler.hello
+    events:
+      - httpApi:
+          path: /
+          method: get
