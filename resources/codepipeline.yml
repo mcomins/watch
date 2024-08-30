@@ -66,7 +66,7 @@ Resources:
     Type: 'AWS::CodePipeline::Pipeline'
     Properties:
       Name: 'watch-codepipeline'
-      RoleArn: !GetAtt CodePipelineRole
+      RoleArn: !GetAtt CodePipelineRole.Arn
       Stages:
         - Name: Source
           Actions:
@@ -98,7 +98,7 @@ Resources:
                 - Name: SourceArtifact
               OutputArtifacts:
                 - Name: BuildStgArtifact
-              RoleArn: !GetAtt CodePipelineRole
+              RoleArn: !GetAtt CodePipelineRole.Arn
               RunOrder: 1
         - Name: ApproveDeployProd
           Actions:
@@ -123,7 +123,7 @@ Resources:
                 - Name: SourceArtifact
               OutputArtifacts:
                 - Name: BuildProArtifact
-              RoleArn: !GetAtt CodePipelineRole
+              RoleArn: !GetAtt CodePipelineRole.Arn
               RunOrder: 1
       Triggers:
         - ProviderType: CodeStarSourceConnection
