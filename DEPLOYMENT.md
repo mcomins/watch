@@ -9,6 +9,24 @@ aws cloudformation deploy --stack-name watch-codebuild-role \
 	--profile default
 ```
 
+> Deploy Role For CodePipeline
+```
+aws cloudformation deploy --stack-name watch-codepipeline-role \
+	--template-file infrastructure/role-codepipeline.yml \
+	--capabilities CAPABILITY_NAMED_IAM \
+	--region us-east-1 \
+	--profile default
+```
+
+> Deploy CodePipeline
+```
+aws cloudformation deploy --stack-name watch-codepipeline \
+	--template-file infrastructure/codepipeline.yml \
+	--capabilities CAPABILITY_NAMED_IAM \
+	--region us-east-1 \
+	--profile default
+```
+
 ### STG ###
 
 > Deploy S3 Artifacts Bucket (us-east-1)

@@ -17,9 +17,6 @@ provider:
 plugins:
   - serverless-deployment-bucket
 
-resources:
-  - ${file(resources/codepipeline.yml)}
-
 functions:
   hello:
     handler: handler.hello

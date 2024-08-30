@@ -1,69 +1,6 @@
 AWSTemplateFormatVersion: "2010-09-09"
 
 Resources:
-  IAMRoleCodePipeline:
-    Type: 'AWS::IAM::Role'
-    Properties:
-      RoleName: watch-codepipeline-role
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Action:
-              - 'sts:AssumeRole'
-            Effect: Allow
-            Principal:
-              Service:
-                - codepipeline.amazonaws.com
-      Policies:
-        - PolicyName: IAMPolicyCodestarConnection
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: Allow
-                Action:
-                - 'codestar-connections:UseConnection'
-                Resource: '*'
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AmazonS3FullAccess
-        - arn:aws:iam::aws:policy/AWSCodeBuildAdminAccess
-        - arn:aws:iam::aws:policy/AWSCodePipeline_FullAccess
-
-  CodeBuildProjectStg:
-    Type: AWS::CodeBuild::Project
-    Properties:
-      Name: 'watch-codebuild-stg'
-      ServiceRole: !GetAtt IAMRoleCodeBuild.Arn
-      Artifacts:
-        Type: CODEPIPELINE
-      Environment:
-        ComputeType: BUILD_GENERAL1_SMALL
-        EnvironmentVariables:
-          - Name: STAGE
-            Value:  stg
-        Image: aws/codebuild/standard:6.0
-        Type: LINUX_CONTAINER
-      Source:
-        Type: CODEPIPELINE
-        BuildSpec: infrastructure/buildspec.yml
-
-  CodeBuildProjectProd:
-    Type: AWS::CodeBuild::Project
-    Properties:
-      Name: 'watch-codebuild-prod'
-      ServiceRole: !GetAtt IAMRoleCodeBuild.Arn
-      Artifacts:
-        Type: CODEPIPELINE
-      Environment:
-        ComputeType: BUILD_GENERAL1_SMALL
-        EnvironmentVariables:
-          - Name: STAGE
-            Value:  prod
-        Image: aws/codebuild/standard:6.0
-        Type: LINUX_CONTAINER
-      Source:
-        Type: CODEPIPELINE
-        BuildSpec: infrastructure/buildspec.yml
-  
   CodePipeline:
     Type: 'AWS::CodePipeline::Pipeline'
     Properties:
