@@ -1,0 +1,142 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Resources:
+  CodeBuildProjectStg:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: 'watch-codebuild-stg'
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        EnvironmentVariables:
+          - Name: STAGE
+            Value:  stg
+        Image: aws/codebuild/standard:6.0
+        Type: LINUX_CONTAINER
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: infrastructure/buildspec.yml
+
+  CodeBuildProjectStg:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: 'watch-codebuild-prod'
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        EnvironmentVariables:
+          - Name: STAGE
+            Value:  prod
+        Image: aws/codebuild/standard:6.0
+        Type: LINUX_CONTAINER
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: infrastructure/buildspec.yml
+
+  CodePipelineRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Action:
+              - 'sts:AssumeRole'
+            Effect: Allow
+            Principal:
+              Service:
+                - codepipeline.amazonaws.com
+      Policies:
+        - PolicyName: IAMPolicyCodestarConnection
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                - 'codestar-connections:UseConnection'
+                Resource: '*'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+        - arn:aws:iam::aws:policy/AWSCodeBuildAdminAccess
+        - arn:aws:iam::aws:policy/AWSCodePipeline_FullAccess
+      RoleName: watch-codepipeline-role
+  
+  CodePipeline:
+    Type: 'AWS::CodePipeline::Pipeline'
+    Properties:
+      Name: 'watch-codepipeline'
+      RoleArn: !GetAtt CodePipelineRole
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: Source
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Version: '1'
+                Provider: CodeStarSourceConnection
+              InputArtifacts: []
+              OutputArtifacts:
+                - Name: SourceArtifact
+              Configuration:
+                BranchName: main
+                ConnectionArn: arn:aws:codeconnections:us-east-1:652325596088:connection/a356cfa6-e8b8-4df8-813d-bb2af25d65d5
+                FullRepositoryId: mcomins/watch
+              RunOrder: 1
+        - Name: DeployStg
+          Actions:
+            - Name: Stg
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: '1'
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: 'watch-codebuild-stg'
+              InputArtifacts:
+                - Name: SourceArtifact
+              OutputArtifacts:
+                - Name: BuildStgArtifact
+              RoleArn: !GetAtt CodePipelineRole
+              RunOrder: 1
+        - Name: ApproveDeployProd
+          Actions:
+            - Name: ApproveForProd
+              ActionTypeId:
+                Category: Approval
+                Owner: AWS
+                Version: '1'
+                Provider: Manual
+              RunOrder: 1
+        - Name: DeployProd
+          Actions:
+            - Name: Prod
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: '1'
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: 'watch-codebuild-prod'
+              InputArtifacts:
+                - Name: SourceArtifact
+              OutputArtifacts:
+                - Name: BuildProArtifact
+              RoleArn: !GetAtt CodePipelineRole
+              RunOrder: 1
+      Triggers:
+        - ProviderType: CodeStarSourceConnection
+          GitConfiguration:
+            Push:
+              - Branches:
+                  Includes:
+                    - main
+      ArtifactStores:
+        - ArtifactStore:
+          Type: S3
+          Location: watch-artifacts
+          EncryptionKey:
+            Type: 'KMS'
+            Id: arn:aws:kms:us-east-1:652325596088:key/08db2c0d-4321-47c1-93b1-3bef8a61d0df
+          Region: us-east-1

@@ -1,0 +1,11 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 20
+    commands:
+      - yarn --verbose --ignore-optional
+    build:
+      - yarn sls:build --stage $STAGE --region $AWS_REGION
+      - yarn sls:deploy --stage $STAGE --region $AWS_REGION

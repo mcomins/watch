@@ -11,6 +11,7 @@
     "lint": "yarn lint:js",
     "lintfix": "yarn lint:js --fix",
     "test": "jest",
+    "sls:build": "nuxt build",
     "sls:deploy": "sls deploy"
   },
   "dependencies": {
