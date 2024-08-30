@@ -1,43 +1,41 @@
 AWSTemplateFormatVersion: "2010-09-09"
 
 Resources:
-  CodeBuildProjectStg:
-    Type: AWS::CodeBuild::Project
-    Properties:
-      Name: 'watch-codebuild-stg'
-      Artifacts:
-        Type: CODEPIPELINE
-      Environment:
-        ComputeType: BUILD_GENERAL1_SMALL
-        EnvironmentVariables:
-          - Name: STAGE
-            Value:  stg
-        Image: aws/codebuild/standard:6.0
-        Type: LINUX_CONTAINER
-      Source:
-        Type: CODEPIPELINE
-        BuildSpec: infrastructure/buildspec.yml
-
-  CodeBuildProjectProd:
-    Type: AWS::CodeBuild::Project
-    Properties:
-      Name: 'watch-codebuild-prod'
-      Artifacts:
-        Type: CODEPIPELINE
-      Environment:
-        ComputeType: BUILD_GENERAL1_SMALL
-        EnvironmentVariables:
-          - Name: STAGE
-            Value:  prod
-        Image: aws/codebuild/standard:6.0
-        Type: LINUX_CONTAINER
-      Source:
-        Type: CODEPIPELINE
-        BuildSpec: infrastructure/buildspec.yml
-
-  CodePipelineRole:
+  IAMRoleCodeBuild:
     Type: 'AWS::IAM::Role'
     Properties:
+      RoleName: watch-codebuild-role
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Action:
+              - 'sts:AssumeRole'
+            Effect: Allow
+            Principal:
+              Service:
+                - codebuild.amazonaws.com
+      Policies:
+        - PolicyName: IAMPolicyS3Encryption
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'kms:DescribeKey'
+                  - 'kms:Encrypt'
+                  - 'kms:GenerateDataKey'
+                  - 'kms:ReEncrypt'
+                  - 'kms:Decrypt'
+                Resource:
+                  - arn:aws:kms:us-east-1:652325596088:key/08db2c0d-4321-47c1-93b1-3bef8a61d0df
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+        - arn:aws:iam::aws:policy/AWSCodeBuildAdminAccess
+
+  IAMRoleCodePipeline:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: watch-codepipeline-role
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -60,13 +58,54 @@ Resources:
         - arn:aws:iam::aws:policy/AmazonS3FullAccess
         - arn:aws:iam::aws:policy/AWSCodeBuildAdminAccess
         - arn:aws:iam::aws:policy/AWSCodePipeline_FullAccess
-      RoleName: watch-codepipeline-role
+
+  CodeBuildProjectStg:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: 'watch-codebuild-stg'
+      ServiceRole: !GetAtt IAMRoleCodeBuild.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        EnvironmentVariables:
+          - Name: STAGE
+            Value:  stg
+        Image: aws/codebuild/standard:6.0
+        Type: LINUX_CONTAINER
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: infrastructure/buildspec.yml
+
+  CodeBuildProjectProd:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: 'watch-codebuild-prod'
+      ServiceRole: !GetAtt IAMRoleCodeBuild.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        EnvironmentVariables:
+          - Name: STAGE
+            Value:  prod
+        Image: aws/codebuild/standard:6.0
+        Type: LINUX_CONTAINER
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: infrastructure/buildspec.yml
   
   CodePipeline:
     Type: 'AWS::CodePipeline::Pipeline'
     Properties:
       Name: 'watch-codepipeline'
-      RoleArn: !GetAtt CodePipelineRole.Arn
+      RoleArn: !GetAtt IAMRoleCodePipeline.Arn
+      ArtifactStore:
+        Type: S3
+        Location: watch-artifacts
+        EncryptionKey:
+          Type: 'KMS'
+          Id: arn:aws:kms:us-east-1:652325596088:key/08db2c0d-4321-47c1-93b1-3bef8a61d0df
       Stages:
         - Name: Source
           Actions:
@@ -98,7 +137,7 @@ Resources:
                 - Name: SourceArtifact
               OutputArtifacts:
                 - Name: BuildStgArtifact
-              RoleArn: !GetAtt CodePipelineRole.Arn
+              RoleArn: !GetAtt IAMRoleCodePipeline.Arn
               RunOrder: 1
         - Name: ApproveDeployProd
           Actions:
@@ -123,20 +162,13 @@ Resources:
                 - Name: SourceArtifact
               OutputArtifacts:
                 - Name: BuildProArtifact
-              RoleArn: !GetAtt CodePipelineRole.Arn
+              RoleArn: !GetAtt IAMRoleCodePipeline.Arn
               RunOrder: 1
       Triggers:
         - ProviderType: CodeStarSourceConnection
           GitConfiguration:
+            SourceActionName: Source
             Push:
               - Branches:
                   Includes:
                     - main
-      ArtifactStores:
-        - ArtifactStore:
-          Type: S3
-          Location: watch-artifacts
-          EncryptionKey:
-            Type: 'KMS'
-            Id: arn:aws:kms:us-east-1:652325596088:key/08db2c0d-4321-47c1-93b1-3bef8a61d0df
-          Region: us-east-1
