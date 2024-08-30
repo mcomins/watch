@@ -20,6 +20,15 @@ aws cloudformation deploy --stack-name watch-stg-us-east-1-artifacts \
 	--profile default
 ```
 
+> Deploy CodeBuild Project
+```
+aws cloudformation deploy --stack-name watch-stg-us-east-1-codebuild \
+	--template-file infrastructure/codebuild-stg-us-east-1.yml \
+	--capabilities CAPABILITY_NAMED_IAM \
+	--region us-east-1 \
+	--profile default
+```
+
 ### PROD ###
 
 > Deploy S3 Artifacts Bucket (us-east-1)

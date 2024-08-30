@@ -1,4 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
+Description: "The AWS CloudFormation template for creating the STG S3 Artifacts Bucket"
 
 Resources:
   S3BucketStg:

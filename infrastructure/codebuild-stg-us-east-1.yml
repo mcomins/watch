@@ -1,0 +1,20 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "The AWS CloudFormation template for creating the STG CodeBuild Project"
+
+CodeBuildProjectStg:
+    Type: AWS::CodeBuild::Project
+    Properties:s
+      Name: 'watch-stg-us-east-1-codebuild'
+      ServiceRole: arn:aws:iam::652325596088:role/watch-codebuild-role
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        EnvironmentVariables:
+          - Name: STAGE
+            Value:  stg
+        Image: aws/codebuild/standard:6.0
+        Type: LINUX_CONTAINER
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: infrastructure/buildspec.yml
