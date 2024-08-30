@@ -18,7 +18,7 @@ Resources:
         Type: CODEPIPELINE
         BuildSpec: infrastructure/buildspec.yml
 
-  CodeBuildProjectStg:
+  CodeBuildProjectProd:
     Type: AWS::CodeBuild::Project
     Properties:
       Name: 'watch-codebuild-prod'
