@@ -5,10 +5,11 @@ Resources:
     Type: 'AWS::CodePipeline::Pipeline'
     Properties:
       Name: 'watch-codepipeline'
-      RoleArn: !GetAtt IAMRoleCodePipeline.Arn
+      RoleArn: arn:aws:iam::652325596088:role/watch-codepipeline-role
+      PipelineType: V2
       ArtifactStore:
         Type: S3
-        Location: watch-artifacts
+        Location: watch-stg-us-east-1-artifacts
         EncryptionKey:
           Type: 'KMS'
           Id: arn:aws:kms:us-east-1:652325596088:key/08db2c0d-4321-47c1-93b1-3bef8a61d0df
@@ -38,12 +39,12 @@ Resources:
                 Version: '1'
                 Provider: CodeBuild
               Configuration:
-                ProjectName: 'watch-codebuild-stg'
+                ProjectName: 'watch-stg-us-east-1-codebuild'
               InputArtifacts:
                 - Name: SourceArtifact
               OutputArtifacts:
                 - Name: BuildStgArtifact
-              RoleArn: !GetAtt IAMRoleCodePipeline.Arn
+              RoleArn: arn:aws:iam::652325596088:role/watch-codepipeline-role
               RunOrder: 1
         - Name: ApproveDeployProd
           Actions:
@@ -63,12 +64,12 @@ Resources:
                 Version: '1'
                 Provider: CodeBuild
               Configuration:
-                ProjectName: 'watch-codebuild-prod'
+                ProjectName: 'watch-prod-us-east-1-codebuild'
               InputArtifacts:
                 - Name: SourceArtifact
               OutputArtifacts:
                 - Name: BuildProArtifact
-              RoleArn: !GetAtt IAMRoleCodePipeline.Arn
+              RoleArn: arn:aws:iam::652325596088:role/watch-codepipeline-role
               RunOrder: 1
       Triggers:
         - ProviderType: CodeStarSourceConnection
