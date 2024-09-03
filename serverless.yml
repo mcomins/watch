@@ -6,6 +6,8 @@ provider:
     name: ${self:service}-${self:provider.stage}-${self:provider.region}-deployment-bucket
     serverSideEncryption: AES256
   environment:
+    DOMAIN_NAME: ${self:service}-${self:provider.stage}.${self:provider.environment.HOSTED_ZONE}
+    HOSTED_ZONE: matthewcomins.com
     REGION: ${self.provider.region}
     SERVICE: ${self:service}
     STAGE: ${self:provider.stage}
@@ -14,13 +16,13 @@ provider:
   runtime: nodejs20.x
   stage: ${opt:stage, 'stg'}
 
+functions:
+  - ${file(resources/api-functions.yml)}
+
 plugins:
   - serverless-deployment-bucket
 
-functions:
-  hello:
-    handler: handler.hello
-    events:
-      - httpApi:
-          path: /
-          method: get
+resources:
+  - ${file(resources/conditions.yml)}
+  - ${file(resources/api-resources.yml)}
+  - ${file(resources/log-resources.yml)}

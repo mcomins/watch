@@ -1,0 +1,55 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Resources:
+  ApiGatewayDomainName:
+    Type: AWS::ApiGatewayV2::DomainName
+    Properties:
+      DomainName: ${self:provider.environment.domainName}
+      DomainNameConfigurations:
+        - EndpointType: REGIONAL
+          CertificateArn: !Ref Certificate
+
+  Certificate:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: ${self:provider.environment.domainName}
+      DomainValidationOptions:
+        - DomainName: ${self:provider.environment.domainName}
+          ValidationDomain: ${self:provider.environment.domainName}
+      ValidationMethod: DNS
+
+  Route53HealthCheck:
+    Type: 'AWS::Route53::HealthCheck'
+    Properties:
+      HealthCheckConfig:
+        FailureThreshold: 1
+        FullyQualifiedDomainName: ${self:provider.environment.DOMAIN_NAME}
+        Port: 443
+        RequestInterval: 30
+        ResourcePath: '/api/health'
+        Type: HTTPS
+      HealthCheckTags:
+        - Key: Name
+          Value: ${self:service}-${self:provider.stage}
+
+  Route53RecordSet:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneName: '${self:provider.environment.HOSTED_ZONE}.'
+      Name: ${self:provider.environment.domainName}
+      ResourceRecords:
+        - !GetAtt ApiGatewayDomainName.RegionalDomainName
+      TTL: 30
+      Type: CNAME
+      Region: ${self:provider.region}
+      HealthCheckId: !Ref Route53HealthCheck
+      SetIdentifier: ${self:service}-${self:provider.stage}-${self:provider.region}-latency
+
+  SSMParameterHealthCheck:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: '/health-check/${self:provider.region}/is-healthy'
+      AllowedPattern: ^true|false$
+      Description: 'Regional health check'
+      Type: String
+      Value: 'true'
