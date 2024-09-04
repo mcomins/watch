@@ -5,7 +5,8 @@ phases:
     runtime-versions:
       nodejs: 20
     commands:
-      - yarn --verbose --ignore-optional
-    build:
+      - yarn install --frozen-lockfile
+  build:
+    commands:
       - yarn sls:build --stage $STAGE --region $AWS_REGION
       - yarn sls:deploy --stage $STAGE --region $AWS_REGION
