@@ -4,19 +4,20 @@ Resources:
   ApiGatewayDomainName:
     Type: AWS::ApiGatewayV2::DomainName
     Properties:
-      DomainName: ${self:provider.environment.domainName}
+      DomainName: ${self:provider.environment.DOMAIN_NAME}
       DomainNameConfigurations:
         - EndpointType: REGIONAL
-          CertificateArn: !Ref Certificate
+          CertificateArn: arn:aws:acm:us-east-1:652325596088:certificate/a75cb789-3935-46cd-91ec-5fb37d59fa9b
 
-  Certificate:
-    Type: AWS::CertificateManager::Certificate
+  ApiGatewayApiMapping:
+    Type: AWS::ApiGatewayV2::ApiMapping
     Properties:
-      DomainName: ${self:provider.environment.domainName}
-      DomainValidationOptions:
-        - DomainName: ${self:provider.environment.domainName}
-          ValidationDomain: ${self:provider.environment.domainName}
-      ValidationMethod: DNS
+      ApiId: !Ref HttpApi
+      DomainName: ${self:provider.environment.DOMAIN_NAME}
+      Stage: !Ref HttpApiStage
+    DependsOn:
+      - ApiGatewayDomainName
+      - HttpApiStage
 
   Route53HealthCheck:
     Type: 'AWS::Route53::HealthCheck'
@@ -36,7 +37,7 @@ Resources:
     Type: AWS::Route53::RecordSet
     Properties:
       HostedZoneName: '${self:provider.environment.HOSTED_ZONE}.'
-      Name: ${self:provider.environment.domainName}
+      Name: ${self:provider.environment.DOMAIN_NAME}
       ResourceRecords:
         - !GetAtt ApiGatewayDomainName.RegionalDomainName
       TTL: 30

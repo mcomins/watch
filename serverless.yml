@@ -21,8 +21,7 @@ functions:
 
 plugins:
   - serverless-deployment-bucket
+  - serverless-plugin-common-excludes
 
 resources:
-  - ${file(resources/conditions.yml)}
   - ${file(resources/api-resources.yml)}
-  - ${file(resources/log-resources.yml)}

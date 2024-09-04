@@ -13,7 +13,8 @@
     "lintfix": "yarn lint:js --fix",
     "test": "jest",
     "sls:build": "nuxt build",
-    "sls:deploy": "sls deploy"
+    "sls:deploy": "sls deploy",
+    "sls:package": "sls package"
   },
   "dependencies": {
     "@nuxtjs/axios": "^5.13.6",
@@ -51,6 +52,7 @@
     "serverless": "^4.2.4",
     "serverless-deployment-bucket": "^1.6.0",
     "serverless-domain-manager": "^7.4.0",
+    "serverless-plugin-common-excludes": "^4.0.0",
     "vue-jest": "^3.0.4"
   }
 }

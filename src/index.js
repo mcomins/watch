@@ -6,6 +6,8 @@ const app = express();
 const config = require('../nuxt.config.js');
 
 const nuxt = new Nuxt(config);
-app.use(nuxt.render);
+app.use((req, res, next) => {
+  nuxt.ready().then(() => nuxt.render(req, res, next));
+});
 
-module.exports.nuxt = http(app, { binary: ['font/*', 'image/*'] });
+module.exports.handler = http(app, { binary: ['font/*', 'image/*'] });
