@@ -16,6 +16,13 @@ Resources:
               Service:
                 - codebuild.amazonaws.com
       Policies:
+        - PolicyName: cloudformationPolicy
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'cloudformation:DescribeStacks'
+                Resource: '*'
         - PolicyName: cloudWatchLogPolicy
           PolicyDocument:
             Version: "2012-10-17"
